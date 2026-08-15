@@ -3,6 +3,8 @@ name: DevSecOps Pipeline
 on:
   push:
     branches: [ "devsecops-pipeline" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
 
@@ -37,8 +39,20 @@ jobs:
           mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=rvillalobos182_pet-clinic \
             -Dsonar.organization=rvillalobos182 \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.host.url=https://sonarcloud.io
+      - name: Esperar procesamiento del análisis
+        run: sleep 20
+      - name: Verificar vulnerabilidades críticas/altas/medias
+        run: |
+          RESPONSE=$(curl -s "https://sonarcloud.io/api/issues/search?componentKeys=rvillalobos182_pet-clinic&types=VULNERABILITY&severities=BLOCKER,CRITICAL,MAJOR&resolved=false")
+          echo "$RESPONSE"
+          TOTAL=$(echo "$RESPONSE" | grep -o '"total":[0-9]*' | head -1 | grep -o '[0-9]*$')
+          echo "Vulnerabilidades encontradas (critica/alta/media): $TOTAL"
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "SAST detecto $TOTAL vulnerabilidad(es). Deteniendo el pipeline."
+            exit 1
+          fi
+          echo "SAST OK, sin vulnerabilidades bloqueantes."
 
   sca:
     name: "3. SCA (Dependency-Check)"
