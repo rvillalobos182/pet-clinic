@@ -77,12 +77,20 @@ jobs:
           name: dependency-check-report
           path: reports
 
-  docker_build:
+docker_build:
     name: "4. Construcción imagen Docker"
     needs: sca
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Compilar proyecto (generar jar)
+        run: mvn -B clean package -DskipTests
+      - name: Copiar jar a la raíz para el Dockerfile
+        run: cp target/*.jar ./spring-petclinic-2.6.0.jar
       - name: Build imagen
         run: docker build -t petclinic:${{ github.sha }} .
       - name: Guardar imagen para el siguiente job
