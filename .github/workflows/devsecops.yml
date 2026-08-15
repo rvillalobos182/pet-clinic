@@ -77,7 +77,7 @@ jobs:
           name: dependency-check-report
           path: reports
 
-docker_build:
+  docker_build:
     name: "4. Construcción imagen Docker"
     needs: sca
     runs-on: ubuntu-latest
